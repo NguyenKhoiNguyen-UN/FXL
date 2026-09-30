@@ -1,0 +1,868 @@
+FXL 1.0 Reference
+=================
+
+VERSION
+-------
+FXL 1.0
+
+MODULES / IMPORTS
+-----------------
+import FXL
+import FXL <1.0>
+import FXL.Main
+import FXL.Ui
+import FXL.Window
+import FXL.Objects
+import FXL.Graphics
+
+
+CORE MODULES
+------------
+
+FXL
+- Primitive types
+- Core values
+- Variables
+- Expressions
+- Operators
+- Functions
+- Control flow
+- Object system
+- Core semantics
+
+FXL.Main
+- Application entry
+- Runtime startup
+- Runtime lifecycle
+- Event loop
+- Application shutdown
+
+FXL.Ui
+- UI system
+- UI object behavior
+- Layout
+- Anchoring
+- Visibility
+- Interaction
+- UI events
+
+FXL.Window
+- Window
+- Native window lifecycle
+- Window visibility
+- Window title bar
+- Window size
+- Window position
+- Window state
+
+FXL.Objects
+- Object
+- rectangle
+- circle
+- ellipse
+- triangle
+- line
+- polygon
+- path
+- image
+- text
+- group
+
+FXL.Graphics
+- 2D rendering
+- Colors
+- Gradients
+- Shapes
+- Images
+- Text rendering
+- Transform
+- Rendering state
+
+
+PRIMITIVE TYPES
+---------------
+Int
+Float
+Double
+Bool
+Char
+String
+
+
+COLLECTION TYPES
+----------------
+Array
+List
+Map
+
+
+CORE LANGUAGE CONSTRUCTS
+-----------------------
+if
+else
+for
+while
+break
+continue
+return
+
+
+CORE OBJECT / VARIABLE TYPES
+----------------------------
+Window
+Object
+Objects
+Text
+Image
+MouseArena
+
+
+UI / CHILD OBJECT TYPES
+-----------------------
+rectangle
+circle
+ellipse
+triangle
+line
+polygon
+path
+image
+text
+group
+
+
+WINDOW
+------
+Window
+
+Window properties / operations:
+Size
+Width
+W
+Height
+H
+Position
+Left
+Right
+Top
+Bottom
+visible
+title
+visible.titlebar
+
+Window title bar:
+window.visible.titlebar(false)
+window.visible.titlebar(true)
+
+Default:
+native title bar = visible
+
+
+OBJECT SYSTEM
+-------------
+Object
+Objects
+
+OBJECT CREATION FORMS
+---------------------
+
+With import FXL.Objects:
+
+1. Direct object creation:
+rectangle(...)
+
+2. Named object creation:
+hinh_chu_nhat = rectangle(...)
+
+Without import FXL.Objects:
+
+3. Object type assigned through Objects:
+rectangle = Objects(...)
+
+4. Named object + object type assigned through Objects:
+hinh_chu_nhat = rectangle = Objects(...)
+
+Official forms:
+with import Objects
+rectangle(...)
+hinh_chu_nhat = rectangle(...)
+
+without import Objects
+rectangle = Objects(...)
+hinh_chu_nhat = rectangle = Objects(...)
+
+`rectangle` is an Object Type when FXL.Objects is imported.
+`Objects` is the object-creation form used when FXL.Objects is not imported.
+
+
+IDENTIFIER RULES
+----------------
+- Identifier must be unique across the entire file.
+- Duplicate identifier declaration is invalid.
+- Error code: E_DUPLICATE_IDENTIFIER
+- Object Type and identifier are distinct concepts.
+- background is an identifier name, not an Object Type.
+- rectangle is an Object Type.
+- Rect is not an official FXL Object Type.
+
+
+OBJECT TREE
+----------
+Window
+└── Object
+    ├── rectangle
+    ├── circle
+    ├── triangle
+    ├── line
+    ├── image
+    ├── text
+    └── group
+
+
+PARENT / CHILD
+--------------
+parent
+child
+children
+add
+remove
+
+
+GEOMETRY PROPERTIES
+-------------------
+Position
+Size
+Width
+W
+Height
+H
+
+
+POSITION / COORDINATE SYSTEM
+----------------------------
+Origin: (0, 0)
+X: right
+Y: down
+2D UI coordinate system
+
+Position(x, y)
+
+
+EDGE POSITIONING
+-----------------
+Left
+Right
+Top
+Bottom
+
+Left()
+Right()
+Top()
+Bottom()
+
+Left(distance)
+Right(distance)
+Top(distance)
+Bottom(distance)
+
+left
+right
+top
+bottom
+
+left(distance)
+right(distance)
+top(distance)
+bottom(distance)
+
+
+CORNER POSITIONING
+------------------
+topLeft
+topRight
+bottomLeft
+bottomRight
+
+
+EDGE COMBINATIONS
+-----------------
+left(20) top(30)
+right(20) top(30)
+left(20) bottom(30)
+right(20) bottom(30)
+
+left(20) right(20)
+top(20) bottom(20)
+
+left(20) right(20) top(20) bottom(20)
+
+
+RELATIVE POSITIONING
+--------------------
+object.direction(distance).reference
+
+Examples:
+
+hinh_tron.left(10).hinh_chu_nhat
+hinh_tron.right(10).hinh_chu_nhat
+hinh_tron.top(10).hinh_chu_nhat
+hinh_tron.bottom(10).hinh_chu_nhat
+
+Directions:
+left
+right
+top
+bottom
+
+Reference identifier must exist.
+
+
+ANCHORING
+---------
+anchorLeft
+anchorRight
+anchorTop
+anchorBottom
+anchorCenter
+anchorCenterX
+anchorCenterY
+
+Anchor concepts:
+- anchorLeft
+- anchorRight
+- anchorTop
+- anchorBottom
+- anchorCenter
+- anchorCenterX
+- anchorCenterY
+
+
+CENTER POSITIONING
+------------------
+Center
+CenterX
+CenterY
+
+
+APPEARANCE PROPERTIES
+---------------------
+Color
+Opacity
+Visible
+visible
+enabled
+interactive
+focusable
+
+
+BORDER
+------
+BorderColor
+BorderWidth
+
+
+RADIUS
+------
+Radius
+radius
+
+
+GRADIENT
+--------
+gradient
+linearGradient
+radialGradient
+gradientStart
+gradientEnd
+gradientAngle
+
+
+TEXT PROPERTIES
+---------------
+Text
+text
+fontFamily
+fontSize
+fontWeight
+fontStyle
+textColor
+textAlign
+verticalAlign
+lineHeight
+letterSpacing
+
+
+TEXT ALIGNMENT VALUES
+---------------------
+left
+center
+right
+
+verticalAlign:
+top
+center
+bottom
+
+
+TRANSFORM PROPERTIES
+--------------------
+Rotation
+rotation
+Scale
+scale
+
+
+FUTURE TRANSFORM PROPERTIES
+---------------------------
+ScaleX
+ScaleY
+RotationX
+RotationY
+
+
+IMAGE PROPERTIES
+---------------
+Image
+image
+source
+
+
+INTERACTION / INPUT
+-------------------
+MouseArena
+
+Mouse input concepts:
+onClick
+onPress
+onRelease
+onHover
+onEnter
+onLeave
+onMouseMove
+onScroll
+
+Keyboard input concepts:
+onKey
+
+Focus concepts:
+focusable
+focus
+blur
+
+
+EVENT SYSTEM
+------------
+Event
+
+Mouse
+- click
+- press
+- release
+- hover
+- enter
+- leave
+- move
+- scroll
+
+Keyboard
+- key
+
+Focus
+- focus
+- blur
+
+
+CORE OBJECT PROPERTIES
+----------------------
+Position
+Size
+Width
+W
+Height
+H
+Left
+Right
+Top
+Bottom
+anchorLeft
+anchorRight
+anchorTop
+anchorBottom
+anchorCenter
+anchorCenterX
+anchorCenterY
+Center
+CenterX
+CenterY
+Color
+Opacity
+Visible
+visible
+enabled
+interactive
+focusable
+BorderColor
+BorderWidth
+Radius
+radius
+gradient
+linearGradient
+radialGradient
+Rotation
+rotation
+Scale
+scale
+
+
+WINDOW PROPERTIES
+-----------------
+Size
+Width
+W
+Height
+H
+Position
+Left
+Right
+Top
+Bottom
+visible
+title
+visible.titlebar
+
+
+GRAPHICS OBJECTS
+----------------
+rectangle
+circle
+ellipse
+triangle
+line
+polygon
+path
+image
+text
+group
+
+
+GRAPHICS STATE
+--------------
+Color
+Opacity
+Gradient
+BorderColor
+BorderWidth
+Radius
+Rotation
+Scale
+Visible
+
+
+COLOR SYNTAX
+------------
+Color(#000000)
+Color(#FFFFFF)
+
+
+SIZE SYNTAX
+-----------
+Size(width, height)
+Width(value)
+W(value)
+Height(value)
+H(value)
+
+
+POSITION SYNTAX
+---------------
+Position(x, y)
+
+
+OPACITY SYNTAX
+--------------
+Opacity(15%)
+Opacity(50%)
+Opacity(100%)
+
+
+OBJECT EXAMPLES
+---------------
+
+Window:
+window = Window(
+    Size(800, 600)
+    Position(0, 0)
+)
+
+Rectangle without import:
+rectangle = Objects(
+    Position(0, 0)
+    Size(800, 600)
+    Color(#10131C)
+)
+
+Named rectangle without import:
+hinh_chu_nhat = rectangle = Objects(
+    Position(0, 0)
+    Size(800, 600)
+    Color(#10131C)
+)
+
+Rectangle with import:
+import FXL.Objects
+
+rectangle(
+    Position(20, 20)
+    Size(200, 100)
+)
+
+Named rectangle with import:
+import FXL.Objects
+
+hinh_chu_nhat = rectangle(
+    Position(20, 20)
+    Size(200, 100)
+)
+
+Circle:
+import FXL.Objects
+
+hinh_tron = circle(
+    Size(100, 100)
+)
+
+Text:
+import FXL.Objects
+
+text = text(
+    Text("Hello")
+    fontSize(24)
+    fontFamily("Arial")
+)
+
+Image:
+image = image(
+    Size(256, 256)
+)
+
+Group:
+group = group(
+    rectangle = rectangle(...)
+    circle = circle(...)
+)
+
+
+WINDOW EXAMPLES
+---------------
+window = Window(
+    Size(800, 600)
+)
+
+window.visible.titlebar(false)
+
+window.visible.titlebar(true)
+
+
+CONTROL FLOW
+------------
+if
+else
+for
+while
+break
+continue
+return
+
+
+MODULE VERSIONING
+-----------------
+import FXL <1.0>
+import FXL.Ui <1.0>
+import FXL.Window <1.0>
+import FXL.Objects <1.0>
+import FXL.Graphics <1.0>
+
+
+FXL 1.0 CORE API CANDIDATES
+---------------------------
+Primitive:
+Int
+Float
+Double
+Bool
+Char
+String
+
+Collections:
+Array
+List
+Map
+
+Core objects:
+Object
+Objects
+Window
+Text
+Image
+MouseArena
+
+Shapes:
+rectangle
+circle
+ellipse
+triangle
+line
+polygon
+path
+
+UI containers:
+group
+
+Geometry:
+Position
+Size
+Width
+W
+Height
+H
+Left
+Right
+Top
+Bottom
+Center
+CenterX
+CenterY
+anchorLeft
+anchorRight
+anchorTop
+anchorBottom
+anchorCenter
+anchorCenterX
+anchorCenterY
+
+Appearance:
+Color
+Opacity
+Visible
+visible
+enabled
+interactive
+focusable
+BorderColor
+BorderWidth
+Radius
+radius
+gradient
+linearGradient
+radialGradient
+gradientStart
+gradientEnd
+gradientAngle
+
+Text:
+Text
+textColor
+fontFamily
+fontSize
+fontWeight
+fontStyle
+textAlign
+verticalAlign
+lineHeight
+letterSpacing
+
+Transform:
+Rotation
+rotation
+Scale
+scale
+
+Events:
+Event
+Mouse
+Keyboard
+Focus
+onClick
+onPress
+onRelease
+onHover
+onEnter
+onLeave
+onMouseMove
+onScroll
+onKey
+focus
+blur
+
+
+FXL 1.0 MODULE MAP
+------------------
+FXL
+├── primitive types
+├── expressions
+├── operators
+├── variables
+├── functions
+├── control flow
+└── object system
+
+FXL.Main
+├── application
+├── startup
+├── runtime lifecycle
+├── event loop
+└── shutdown
+
+FXL.Ui
+├── UI objects
+├── layout
+├── anchors
+├── visibility
+├── interaction
+└── events
+
+FXL.Window
+├── Window
+├── native window
+├── title bar
+├── window size
+├── window position
+└── window state
+
+FXL.Objects
+├── Object
+├── Objects
+├── rectangle
+├── circle
+├── ellipse
+├── triangle
+├── line
+├── polygon
+├── path
+├── image
+├── text
+└── group
+
+FXL.Graphics
+├── renderer
+├── color
+├── opacity
+├── gradient
+├── border
+├── radius
+├── transform
+├── image rendering
+└── text rendering
+
+
+FXL 1.0 RESERVED / NOT OFFICIAL
+--------------------------------
+Rect
+Background
+
+Rect is not an official Object Type.
+Background is not an official Object Type.
+
+
+END OF FXL 1.0 REFERENCE
+=========================

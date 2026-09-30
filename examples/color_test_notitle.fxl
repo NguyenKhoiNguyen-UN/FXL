@@ -1,0 +1,31 @@
+import ui
+
+#autoSet {
+    window = Window(
+        Size(800, 600)
+        window.setTitle("FXL Color Test")
+
+        red = rectangle(
+            Position(0, 0)
+            Size(266, 600)
+            Color(#FF0000)
+            Opacity(100%)
+        )
+
+        green = rectangle(
+            Position(267, 0)
+            Size(266, 600)
+            Color(#00FF00)
+            Opacity(100%)
+        )
+
+        blue = rectangle(
+            Position(534, 0)
+            Size(266, 600)
+            Color(#0000FF)
+            Opacity(100%)
+        )
+    )
+}
+
+window.visible.titlebar(false)

@@ -1,0 +1,16 @@
+import ui
+//ddd 
+#autoSet {
+    window = Window(
+        Size(800, 600)
+        Position(100, 100)
+
+        rectangle = Object(
+            Color(#000000)
+            Opacity(15%)
+            Size(13, 45)
+        )
+    )
+}
+
+window.setTitle("FXL App")

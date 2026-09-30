@@ -1,0 +1,6 @@
+import ui
+
+window = Window(
+    Size(800, 600)
+    Position(100, 100)
+)

@@ -1,0 +1,6 @@
+import ui
+
+window = Window(
+    Size(800, 600)
+    window.visible.titlebar(false)
+)

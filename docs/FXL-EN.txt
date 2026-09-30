@@ -1,0 +1,594 @@
+﻿================================================================
+FXL - SUMMARY GUIDE FOR PEOPLE AND AI WORKING ON THE PROJECT
+Scope: Sections 1, 2, 3 and 4 of the current FXL specification
+================================================================
+
+How to use this file
+- Read top to bottom. Parts A and B are enough to understand what FXL
+  is and which rules must never be broken. Parts C, D, E and F
+  summarize each section. Parts G to J are quick-reference tables.
+- This is only a summary. If anything conflicts, the full specification
+  (FXL-VI.docx / FXL-EN.docx) is the authoritative version.
+
+
+----------------------------------------------------------------
+A. WHAT IS FXL
+----------------------------------------------------------------
+- FXL is a general-purpose programming language. It is NOT only for UI.
+- Focus: applications, user interfaces (UI), 2D/3D graphics and general
+  programming. Other systems will be added later.
+- Goal: make writing applications/UI simpler and more intuitive than
+  writing C++ directly.
+- In the early stage FXL compiles to C++:
+
+      FXL Source -> Compiler -> C++ Source -> C++ Compiler -> Executable
+
+- Official command-line tool: fxlc (compile / build / preview).
+- Status: the specification is written section by section. Section 1
+  (syntax and compiler), Section 2 (UI runtime and rendering),
+  Section 3 (CLI), Section 4 (Object declaration, coordinates, layout, title bar).
+
+
+----------------------------------------------------------------
+B. MANDATORY PRINCIPLES (DO NOT BREAK)
+----------------------------------------------------------------
+1. NO GUESSING. Whatever the specification defines, the compiler /
+   runtime / CLI handles. Whatever it does not define, nobody may
+   invent behavior or syntax for it.
+2. The compiler is not text substitution. It must understand structure
+   (Lexer -> Parser -> AST -> Semantic -> Auto Resolution -> C++).
+3. An Auto Directive (for example #autoSet) only affects the area
+   inside its own block.
+4. #autoSet only shortens actions that appear in its mapping table. An
+   arbitrary name must never be treated as a setter based on the name
+   alone.
+5. Multiple Auto Directives must not be combined in one declaration.
+   Invalid:  #autoSet #autoPick { ... }
+6. The runtime must not create new FXL syntax on its own (for example
+   Anchor, Grid, Margin, Padding are not FXL syntax until defined).
+7. OpenGL / GLSL belong only to Rendering / Graphics Backend. They are
+   not language syntax, and the compiler must not depend on a specific
+   graphics API.
+8. Preview must use the real compiler and the real UI Runtime +
+   Renderer. It must not use a fake renderer or just print logs.
+9. Debug and Release must not change the semantics of an FXL program.
+   Changing the C++ compiler (g++ / cl.exe) must not change semantics
+   either.
+10. The CLI must report errors clearly, return correct exit codes
+    (0 = success, non-zero = failure) and never pretend to succeed
+    when it failed.
+11. Working order for Section 2: Correct -> Really runs -> Observable
+    -> only then optimize.
+12. Identifier is NOT Object Type. For background = rectangle(...):
+    background is the Object name, rectangle is the Object kind. Never
+    create an Object Type from an Identifier name, and never abbreviate
+    an Object Type (rectangle must not become Rect).
+13. An Identifier must not be declared twice in one file, regardless of
+    scope or depth. A duplicate must produce a compiler error.
+14. Layout must be deterministic. The Renderer only uses resolved Final
+    Bounds.
+15. A test counts as PASS only after real execution, not just because a
+    parser or class exists.
+
+
+----------------------------------------------------------------
+C. SECTION 1 - FXL BASICS (DRAFT)
+----------------------------------------------------------------
+C.1. Basic syntax
+
+    import ui
+
+    window = Window()
+    window.setSize(800, 600)
+
+    button = Button()
+    button.setText("Click me")
+    window.add(button)
+
+  General form:  import <library>
+                 <variable> = <create object>
+                 <variable>.<operation>(<arguments>)
+
+C.2. Object Blocks and nested objects
+  An object can be configured while it is created, and can contain
+  other objects:
+
+    window = Window(
+        window.setSize(800, 600)
+
+        rectangle = Object(
+            rectangle.setColor(#000000)
+            rectangle.setOpacity(15%)
+            rectangle.setSize(13, 45)
+        )
+    )
+
+  Structure: Window -> rectangle (nesting to any depth).
+
+C.3. #autoSet (the first Auto Directive)
+  Shortens "set" operations. The compiler adds the current object name
+  and the "set" prefix.
+
+    #autoSet {
+        window = Window(
+            Size(800, 600)                 // = window.setSize(800, 600)
+            rectangle = Object(
+                Color(#000000)             // = rectangle.setColor(#000000)
+                Opacity(15%)               // = rectangle.setOpacity(15%)
+                Size(13, 45)               // = rectangle.setSize(13, 45)
+            )
+        )
+    }
+
+  Two declaration forms:
+    - Declaration form:  main #autoSet   (placed before the code)
+    - Block form:        #autoSet { ... }
+
+  The "current object" is determined from program structure and scope
+  (the nearest object enclosing that statement).
+
+C.4. Initial #autoSet setter mapping
+    Size(...)      ->  setSize(...)
+    Color(...)     ->  setColor(...)
+    Opacity(...)   ->  setOpacity(...)
+    Position(...)  ->  setPosition(...)
+    Text(...)      ->  setText(...)
+  The list may grow. Actions outside the table (for example Rotate(30))
+  must NOT be turned into setRotate(30) automatically.
+
+C.5. Multiple and nested Auto Directives
+  - A file may contain several Auto Directives, each in its own block
+    with its own scope.
+  - They can be nested: the inner directive creates an "inner auto
+    scope". Leaving the inner block returns to the outer directive.
+
+      #autoSet {
+          A()              // handled by #autoSet
+          #autoPick {
+              B()          // handled by #autoPick
+          }
+          C()              // handled by #autoSet again
+      }
+
+  - #autoPick is only an EXAMPLE of another directive. Its behavior is
+    NOT defined yet.
+  - Code outside an #autoSet block does not get the shorthand.
+
+C.6. Compiler pipeline
+    FXL Source -> Lexer -> Tokens -> Parser -> AST -> Semantic Analysis
+    -> Auto Resolution -> C++ Code Generator -> C++ -> C++ Compiler
+    -> Executable
+  Resolution example: AutoSetAction(Size, 800, 600) in window
+                 -> MethodCall(Target=window, Method=setSize, 800, 600)
+                 -> C++:  window.setSize(800, 600);
+
+
+----------------------------------------------------------------
+D. SECTION 2 - UI RUNTIME & RENDERING
+----------------------------------------------------------------
+D.1. Goal
+  Move FXL from "can compile UI declarations into C++" to "can really
+  display an interface on screen". Section 2 is complete when an FXL
+  program runs and a basic UI is visible on screen (not just logged).
+
+D.2. Three components, three responsibilities
+  - Compiler : understands FXL, processes Auto Directives, generates
+               C++. Does not draw pixels.
+  - Runtime  : creates and manages UI objects, manages parent/child
+               relationships, stores state/properties, connects to the
+               display system. Does not parse FXL.
+  - Rendering: turns UI state into an image.
+  Chain: FXL -> Compiler -> Generated C++ -> Runtime -> UI Object ->
+         Renderer -> Graphics Backend -> Native Window.
+
+D.3. Initial UI Objects
+    Window     window hosting the interface
+    Panel      container for other objects
+    Rectangle  rectangle primitive (key experimental object)
+    Button     basic interactive control
+    Object     base object used as a foundation for extension
+
+D.4. Object Tree
+  Nested objects form a tree, for example Window -> Panel -> Rectangle
+  -> Button. The containing object is the parent, the inner object is
+  the child. The Runtime must keep this tree correct so the Renderer can
+  traverse and draw it.
+
+D.5. Basic properties (Runtime State)
+    Position  position, 2D coordinate system
+    Size      size (for Window: affects the real window size)
+    Color     color, for example #202020 (must affect the real image)
+    Opacity   transparency, for example 50%
+    Text      text content (advanced typography is not defined)
+  An object only uses the properties it supports.
+
+D.6. Renderer and Graphics Backend
+  - UI Objects do not contain renderer implementation. Structure:
+    UI Object -> UI Runtime -> Renderer -> Graphics Backend -> Graphics
+    API / native display system.
+  - The backend can be replaced. OpenGL + GLSL may be used in
+    experiments but are neither mandatory nor part of the language
+    syntax.
+
+D.7. Preview
+    fxlc preview examples/preview_test.fxl
+  Runs the real pipeline: FXL -> Compiler -> C++ -> C++ Compiler ->
+  Executable -> Runtime -> Renderer -> UI. Same Runtime as a real
+  application.
+
+D.8. Step-by-step experiments (each step must run before the next)
+    1. Window                    -> Native Window
+    2. Window + Rectangle        -> Rectangle really displayed
+    3. Window + Rectangle+Color  -> Correct color
+    4. Window + Button           -> Button really displayed
+    5. Window + Button + Text    -> Text really displayed
+  Suggested test files: examples/basic.fxl, autoset.fxl, nested.fxl,
+  preview_test.fxl, window_test.fxl, rectangle_test.fxl,
+  button_test.fxl, color_test.fxl (for testing, not a replacement for
+  the specification).
+
+D.9. Runtime lifecycle (section 21A)
+    Program Start -> Runtime Initialization -> Object Creation ->
+    Object Initialization -> Object Tree Build -> Window Initialization
+    -> Renderer Initialization -> Runtime Loop -> Shutdown -> Cleanup
+    -> Program Exit
+  - The Runtime Loop repeats: Process Events -> Update State -> Render
+    -> Present -> (repeat) until an exit request (for example closing
+    the window).
+  - Creating an object and rendering an object are different things.
+  - There is ONE main Runtime context for the whole program.
+  - Runtime states: Created -> Initializing -> Ready -> Running ->
+    Stopping -> Shutdown -> Destroyed. Never use the Runtime after
+    Destroyed.
+  - Cleanup must release: Window, Graphics Context, Buffers, Textures,
+    Shaders, UI Objects, Runtime State; never access destroyed objects.
+  - The compiler runs BEFORE the executable exists; the Runtime runs
+    only WHEN the executable runs. The compiler is not the Runtime.
+
+D.10. Not in the scope of Section 2
+  Advanced Layout, Animation, Full Event System, Accessibility, Theme
+  System, complete 3D Rendering, Advanced Shader System, Hot Reload,
+  Visual UI Designer, a complete IDE.
+  (The Runtime has a foundation for receiving events, but there is NO
+  FXL event syntax yet.)
+
+
+----------------------------------------------------------------
+E. SECTION 3 - FXL CLI
+----------------------------------------------------------------
+E.1. Command structure
+    fxlc <command> <input.fxl> [options]
+
+E.2. Requirement levels
+    MUST         mandatory; missing it means not compatible
+    SHOULD       recommended; may be missing in the first version
+    MAY          optional
+    NOT DEFINED  not specified; must not be treated as FXL standard
+
+E.3. Requirement table
+    fxlc, compile, build, preview          MUST
+    .fxl input                             MUST
+    -o                                     MUST
+    --debug, --release                     MUST
+    --keep-cpp, --tokens, --ast            MUST
+    Diagnostics, Exit code                 MUST
+    --help, --version                      SHOULD
+    Extended toolchain selection           MAY
+    Commands not in the specification      NOT DEFINED (e.g. hot-reload)
+
+E.4. The three commands
+    compile  : run the FXL -> C++ pipeline (no executable required).
+    build    : compile + invoke the C++ compiler -> executable.
+    preview  : compile + build + run to observe the result (real
+               Runtime).
+
+E.5. Options
+    -o <file>   compile: output C++ file. build: output executable.
+                preview: MAY (a temporary executable is allowed).
+    --debug     Debug configuration (debug info, low optimization).
+                The default for build is Debug.
+    --release   Release configuration (optimized, for distribution).
+    --keep-cpp  keep the generated C++.
+    --tokens    print the real tokens from the Lexer.
+    --ast       print the real AST from the Parser.
+    --help / --version  (SHOULD).
+  Rules: --debug and --release must NOT be used together (report an
+  error, never silently pick one). --tokens and --ast may be combined.
+
+E.6. Errors, stdout/stderr, exit codes
+  - A diagnostic should include: severity, file, line, column, message.
+    Example:  error: examples/main.fxl:12:5  Unknown operation 'Rotate'
+  - Error groups: CLI Error / FXL Compile Error / C++ Build Error /
+    Runtime Error. Do not merge them when they can be told apart.
+  - Normal output goes to stdout; errors and diagnostics should go to
+    stderr.
+  - Exit code: 0 = success, non-zero = failure.
+  - Relative paths are resolved from the working directory of the
+    process.
+
+E.7. Extensions
+  An implementation may have its own commands (clean, package,
+  install...), but they are NOT the CLI core, must not be treated as
+  MUST, and must not change the behavior of core commands.
+
+E.8. Standard workflow
+    Write FXL -> fxlc compile -> inspect -> fxlc build --debug -> run ->
+    fxlc preview -> test UI -> fxlc build --release -> distribute.
+  Checking layer by layer: --tokens (Lexer), --ast (Parser),
+  build --debug --keep-cpp (Semantic + Codegen + C++ build).
+
+
+----------------------------------------------------------------
+F. SECTION 4 - OBJECT DECLARATION, COORDINATE, LAYOUT & WINDOW VISIBILITY
+----------------------------------------------------------------
+F.1. Identifier and Object Type
+    background = rectangle(...)
+    background  -> Identifier (name chosen by the programmer)
+    rectangle   -> Object Type (kind provided by FXL / a library)
+  - "Background" is only a ROLE an Object can play, not an Object Type.
+    background = Background(...) is invalid unless Background is
+    defined.
+  - Object Types are not abbreviated: Rect is not syntax unless it is
+    defined.
+
+F.2. The four Object declaration forms
+  Without importing the Object library:
+    <identifier> = <object_type> = Objects(<body>)
+    <object_type> = Objects(<body>)
+  With "import FXL.Objects":
+    <identifier> = <object_type>(<body>)
+    <object_type>(<body>)          (creates no Identifier)
+  Example:
+    import FXL.Objects
+    background = rectangle(
+        Position(0, 0)
+        Size(800, 600)
+        Color(#10131C)
+    )
+  The (...) part is the Object Block, holding statements and child
+  Objects.
+
+F.3. Identifiers are unique within a file
+  - The same Identifier must not be declared twice anywhere in the file
+    (even in different Object Blocks or unrelated parents/children).
+  - Sample error:
+      error [E_DUPLICATE_IDENTIFIER]:
+      Identifier 'button' is already declared
+  - Using the same Object Type several times is NOT a duplicate
+    (background = rectangle(...), foreground = rectangle(...) is valid).
+
+F.4. UI coordinate system
+  - 2D, origin (0, 0) at the TOP-LEFT corner. X increases to the right,
+    Y increases downward.
+  - Default unit on desktop: pixel.
+  - Coordinates are resolved along the Object Tree (not every Object is
+    treated as sitting directly on the Desktop) and are based on the
+    client area of the Window.
+
+F.5. Edge and corner positions
+    Position(x, y)        direct X/Y position (= setPosition)
+    left / left(n)        n pixels from the left edge
+    top / top(n)          n pixels from the top edge
+    right / right(n)      n pixels from the right edge
+    bottom / bottom(n)    n pixels from the bottom edge
+    topLeft, topRight, bottomLeft, bottomRight   corner positions, can
+                          be combined with distances, e.g. topLeft +
+                          left(10) + top(10)
+  Formulas:
+    right(n)  : x = parent_width  - n - object_width
+    bottom(n) : y = parent_height - n - object_height
+    left + right (no fixed width): width = parent_width - left - right
+    top + bottom (no fixed height): height = parent_height - top -
+                                    bottom
+    All four edges without Size: the Runtime determines the bounds.
+  - There is no "Margin" Object Type: edge distances are written
+    directly as left(n), right(n), top(n), bottom(n).
+  - If Size(...) conflicts with edge constraints, layout must resolve
+    it deterministically, never arbitrarily.
+
+F.6. Relative Position between Objects
+    <object_identifier>.<direction>(<distance>).<reference_identifier>
+    hinh_tron.left(10).hinh_chu_nhat    hinh_tron is to the LEFT, 10px
+    hinh_tron.right(10).hinh_chu_nhat   ... to the right
+    hinh_tron.top(10).hinh_chu_nhat     ... above
+    hinh_tron.bottom(10).hinh_chu_nhat  ... below
+  - This is a relationship / constraint; it does NOT create a new
+    Object Type.
+  - The reference Identifier must exist, otherwise:
+      error [E_UNKNOWN_IDENTIFIER]:
+      Unknown identifier 'hinh_chu_nhat'
+    and the compiler must stop.
+
+F.7. Layout Resolution
+    Object Tree -> Parent / Reference Bounds -> Edge Constraints ->
+    Relative Constraints -> Position -> Size -> Final Bounds
+  The Renderer only uses Final Bounds. When a layout property changes:
+    Layout Dirty -> Layout Resolution -> Updated Final Bounds ->
+    Rendering.
+  The Runtime lifecycle (section 51) gains a Layout Resolution step
+  between State Update and Rendering.
+
+F.8. Window Title Bar
+    window.visible.titlebar(false)   hide the native title bar
+    window.visible.titlebar(true)    show the native title bar
+  - Default: the title bar is visible (visible.titlebar = true).
+  - It must change the real native Window style (on Windows: a Win32
+    style), not just store a Boolean in the Runtime.
+  - Coordinates are based on the client area; hiding the title bar must
+    not break coordinate consistency.
+
+F.9. What the compiler and Semantic Analysis must check
+  Whether the Identifier exists, whether the Object Type is valid,
+  duplicate declarations, whether the reference Identifier exists,
+  whether the Object supports the property used, and that
+  visible.titlebar only applies to a Window.
+  The compiler must not fake semantics through string replacement.
+
+F.10. Syntax that must not be invented (per Section 4)
+  Rect, Background, Padding, Anchor, Grid, Flex, Center, Stretch.
+
+F.11. Definition of Done for Section 4 (each item must PASS by real
+      execution)
+  Declaration with / without import; Identifier / Object Type
+  distinction; duplicate Identifier; Position, Size; left, right, top,
+  bottom; the four corners; left+right, top+bottom, four edges; Relative
+  left/right/top/bottom; unknown-reference error; default, hidden and
+  shown title bar; Layout Resolution; Preview using the real Runtime.
+
+F.12. Test example from Section 4
+    import ui
+    import FXL.Objects
+
+    window = Window(
+        Size(800, 600)
+
+        hinh_chu_nhat = rectangle(
+            Position(300, 250)
+            Size(200, 100)
+            Color(#202020)
+        )
+
+        hinh_tron = object(
+            Size(100, 100)
+        )
+    )
+
+    hinh_tron.left(10).hinh_chu_nhat
+
+
+----------------------------------------------------------------
+G. GLOSSARY
+----------------------------------------------------------------
+Lexer              Splits source code into tokens.
+Parser             Builds the syntactic structure from tokens.
+AST                Abstract Syntax Tree representing the program.
+Semantic Analysis  Checks meaning: variables, scope, mapping, validity.
+Auto Directive     Shorthand mechanism of the form #auto... (e.g.
+                   #autoSet).
+Auto Resolution    The step that turns shorthand syntax into full
+                   method calls.
+Object Block       The part inside Type(...) holding operations and
+                   child objects.
+Object Tree        Parent/child relationship tree of UI objects.
+Runtime            Executes UI objects, keeps state, connects to
+                   display.
+Renderer           Draws UI state into an image.
+Graphics Backend   Layer connecting the Renderer to the platform
+                   graphics API.
+Runtime Loop       The Event -> Update -> Render -> Present loop.
+Present            Puts the rendered frame onto the window.
+Preview            Quickly builds and runs an FXL program to see the
+                   real UI.
+fxlc               The executable of the FXL CLI.
+Identifier         Name chosen by the programmer for an Object (e.g.
+                   background).
+Object Type        Kind of Object provided by FXL / a library (e.g.
+                   rectangle).
+Edge constraint    Edge-based position: left, right, top, bottom.
+Relative Position  Placing an Object relative to another Object
+                   (a.left(10).b).
+Final Bounds       Final x, y, width, height after layout is resolved.
+Layout Resolution  Step that computes Final Bounds from the Object Tree
+                   and constraints.
+
+
+----------------------------------------------------------------
+H. NOT DEFINED YET (DO NOT INVENT)
+----------------------------------------------------------------
+- The behavior of #autoPick and any Auto Directive other than #autoSet.
+- Operations outside the mapping table (Rotate, ...).
+- Layout syntax: Anchor, Grid, Padding, Flex, Center, Stretch.
+  (Section 4 defines left/right/top/bottom, corners and Relative
+  Position; Margin is NOT an Object Type, use left(n)... instead.)
+- Rect, Background as Object Types; any abbreviation of Object Types.
+- FXL event syntax (click, hover, ...).
+- Animation, Theme, Accessibility, Hot Reload.
+- Advanced typography.
+- Detailed behavior of commands other than compile / build / preview.
+- Exit codes more detailed than 0 / non-zero.
+- Ordinary variables, functions, if / for, data types: not in Sections
+  1-3.
+
+
+----------------------------------------------------------------
+I. NOTES AND OPEN POINTS (WORTH SETTLING IN LATER SECTIONS)
+----------------------------------------------------------------
+1. The "#" symbol is used for both colors (#000000) and directives
+   (#autoSet). The Lexer must tell these two cases apart.
+2. Inside #autoSet, Size(...) looks like an object-creation call
+   (Window(...)). The mapping table is the only basis for knowing which
+   one is a setter.
+3. The declaration form "main #autoSet" appears in examples, but the
+   exact meaning and scope of "main" is not described in detail.
+4. The same line (for example Size(13, 45)) is handled differently
+   depending on which directive block it is in (section 10 of
+   Section 1). The compiler and error tooling should state which
+   directive is active.
+5. Section 3 had two drafts. The one used in the document is the
+   version with MUST / SHOULD / MAY. Some content from the first draft
+   (detailed workflows, per-command help, extended examples) was not
+   carried over.
+6. There is not yet a full "language" part (variables, functions,
+   conditions, loops).
+7. Object Type spelling is not yet consistent between sections: Section
+   2 uses Window, Button, Rectangle, Panel, Object (capitalized);
+   Section 4 uses rectangle, object (lowercase) with Window and Button
+   capitalized. A capitalization convention for Object Types needs to be
+   settled.
+8. Section 4 uses "import FXL.Objects" while earlier examples use
+   "import ui". The relationship between the two imports is not
+   described.
+9. Direction of Relative Position: a.left(10).b means a is to the left
+   of b (not "a is 10 from b's left edge"). Keep this reading
+   consistent in examples and diagnostics.
+10. The Section 4 Relative Position example places a.left(10).b outside
+    the window Object Block; the allowed scope of such a statement is
+    not fully described.
+11. "Topmost parent region" (section 23) and the handling of Size + edge
+    conflicts (section 35) are only at the principle level and need
+    detailed rules in a later section.
+
+
+----------------------------------------------------------------
+J. REFERENCE EXAMPLE (THE TARGET OF SECTION 2)
+----------------------------------------------------------------
+    import ui
+
+    #autoSet {
+        window = Window(
+            Size(800, 600)
+
+            rectangle = Rectangle(
+                Position(20, 20)
+                Size(400, 250)
+                Color(#202020)
+            )
+
+            button = Button(
+                Position(100, 300)
+                Size(200, 60)
+                Text("Hello from FXL")
+            )
+        )
+    }
+
+  Run:    fxlc preview examples/preview_test.fxl
+  Expected result: a real 800x600 window with a rectangle and a
+  "Hello from FXL" button.
+
+  Generated C++ (idea):
+    auto window = Window();
+    window.setSize(800, 600);
+    ...
+
+
+----------------------------------------------------------------
+K. WHEN CONTINUING THE SPECIFICATION OR WORKING WITH THE DOCUMENTS
+----------------------------------------------------------------
+- If something is not decided, write "NOT DEFINED" instead of guessing.
+- Use MUST / SHOULD / MAY to describe how binding something is.
+- Each new section should state: goal, scope, what is out of scope, and
+  the status at the end of the section.
+- Do not let a later feature break the principles in part B.
+- Official documents: FXL-VI.docx and FXL-EN.docx (updated together).
+  Each section has its own theme color.

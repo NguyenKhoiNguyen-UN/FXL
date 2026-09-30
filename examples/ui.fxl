@@ -1,0 +1,166 @@
+import ui
+
+window = Window()
+window.setSize(1100, 700)
+
+// Background
+background = Rect()
+background.setPosition(0, 0)
+background.setSize(1100, 700)
+background.setColor(#10131C)
+background.setOpacity(100%)
+window.add(background)
+
+// Top dark panel
+topPanel = Rect()
+topPanel.setPosition(30, 30)
+topPanel.setSize(1040, 100)
+topPanel.setColor(#171C2B)
+topPanel.setOpacity(100%)
+window.add(topPanel)
+
+// Red block
+red = Rect()
+red.setPosition(50, 160)
+red.setSize(180, 130)
+red.setColor(#FF3B30)
+red.setOpacity(100%)
+window.add(red)
+
+// Orange block
+orange = Rect()
+orange.setPosition(250, 160)
+orange.setSize(180, 130)
+orange.setColor(#FF9500)
+orange.setOpacity(100%)
+window.add(orange)
+
+// Yellow block
+yellow = Rect()
+yellow.setPosition(450, 160)
+yellow.setSize(180, 130)
+yellow.setColor(#FFD60A)
+yellow.setOpacity(100%)
+window.add(yellow)
+
+// Green block
+green = Rect()
+green.setPosition(650, 160)
+green.setSize(180, 130)
+green.setColor(#30D158)
+green.setOpacity(100%)
+window.add(green)
+
+// Cyan block
+cyan = Rect()
+cyan.setPosition(850, 160)
+cyan.setSize(180, 130)
+cyan.setColor(#64D2FF)
+cyan.setOpacity(100%)
+window.add(cyan)
+
+// Blue block
+blue = Rect()
+blue.setPosition(150, 320)
+blue.setSize(180, 130)
+blue.setColor(#0A84FF)
+blue.setOpacity(100%)
+window.add(blue)
+
+// Purple block
+purple = Rect()
+purple.setPosition(350, 320)
+purple.setSize(180, 130)
+purple.setColor(#BF5AF2)
+purple.setOpacity(100%)
+window.add(purple)
+
+// Pink block
+pink = Rect()
+pink.setPosition(550, 320)
+pink.setSize(180, 130)
+pink.setColor(#FF375F)
+pink.setOpacity(100%)
+window.add(pink)
+
+// White block
+white = Rect()
+white.setPosition(750, 320)
+white.setSize(180, 130)
+white.setColor(#FFFFFF)
+white.setOpacity(100%)
+window.add(white)
+
+// Gray blocks
+gray1 = Rect()
+gray1.setPosition(50, 490)
+gray1.setSize(150, 80)
+gray1.setColor(#2C2C2E)
+gray1.setOpacity(100%)
+window.add(gray1)
+
+gray2 = Rect()
+gray2.setPosition(220, 490)
+gray2.setSize(150, 80)
+gray2.setColor(#48484A)
+gray2.setOpacity(100%)
+window.add(gray2)
+
+gray3 = Rect()
+gray3.setPosition(390, 490)
+gray3.setSize(150, 80)
+gray3.setColor(#636366)
+gray3.setOpacity(100%)
+window.add(gray3)
+
+// Semi-transparent overlay
+overlay = Rect()
+overlay.setPosition(570, 490)
+overlay.setSize(150, 80)
+overlay.setColor(#FF2D55)
+overlay.setOpacity(50%)
+window.add(overlay)
+
+// Another semi-transparent overlay
+overlay2 = Rect()
+overlay2.setPosition(740, 490)
+overlay2.setSize(150, 80)
+overlay2.setColor(#5E5CE6)
+overlay2.setOpacity(50%)
+window.add(overlay2)
+
+// Button 1
+button1 = Button()
+button1.setPosition(50, 600)
+button1.setSize(220, 55)
+button1.setText("RED BUTTON")
+button1.setColor(#FF3B30)
+button1.setOpacity(100%)
+window.add(button1)
+
+// Button 2
+button2 = Button()
+button2.setPosition(290, 600)
+button2.setSize(220, 55)
+button2.setText("BLUE BUTTON")
+button2.setColor(#0A84FF)
+button2.setOpacity(100%)
+window.add(button2)
+
+// Button 3
+button3 = Button()
+button3.setPosition(530, 600)
+button3.setSize(220, 55)
+button3.setText("PURPLE BUTTON")
+button3.setColor(#BF5AF2)
+button3.setOpacity(100%)
+window.add(button3)
+
+// Button 4
+button4 = Button()
+button4.setPosition(770, 600)
+button4.setSize(220, 55)
+button4.setText("GREEN BUTTON")
+button4.setColor(#30D158)
+button4.setOpacity(100%)
+window.add(button4)

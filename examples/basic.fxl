@@ -1,0 +1,9 @@
+import ui
+
+window = Window()
+window.setSize(800, 600)
+
+button = Button()
+button.setText("Click me")
+
+window.add(button)

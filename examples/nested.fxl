@@ -1,0 +1,19 @@
+import ui
+
+window = Window(
+    window.setSize(800, 600)
+
+    panel = Panel(
+        panel.setPosition(10, 10)
+
+        rectangle = rectangle(
+            rectangle.setColor(#FF0000)
+            rectangle.setSize(100, 100)
+
+            button = Button(
+                button.setText("Click")
+                button.setColor(#00FF00)
+            )
+        )
+    )
+)

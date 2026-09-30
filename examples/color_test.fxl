@@ -1,0 +1,32 @@
+import ui
+
+window = Window(
+    window.setSize(800, 600)
+    window.setPosition(100, 100)
+    window.setTitle("FXL Color Test")
+
+    redBox = rectangle(
+        redBox.setPosition(0, 0)
+        redBox.setSize(266, 600)
+        redBox.setColor("#FF0000")
+        redBox.setOpacity(100)
+    )
+
+    greenBox = rectangle(
+        greenBox.setPosition(267, 0)
+        greenBox.setSize(266, 600)
+        greenBox.setColor("#00FF00")
+        greenBox.setOpacity(100)
+    )
+
+    blueBox = rectangle(
+        blueBox.setPosition(534, 0)
+        blueBox.setSize(266, 600)
+        blueBox.setColor("#0000FF")
+        blueBox.setOpacity(100)
+    )
+
+    window.add(redBox)
+    window.add(greenBox)
+    window.add(blueBox)
+)

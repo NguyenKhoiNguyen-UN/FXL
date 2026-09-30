@@ -1,0 +1,7 @@
+import ui
+
+#autoSet {
+    window = Window(
+        Size(800, 600)
+    )
+}
